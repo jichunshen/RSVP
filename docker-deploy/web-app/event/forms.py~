@@ -1,0 +1,89 @@
+from django import forms
+from django.contrib.auth.models import User
+
+from .models import Event, TextQuestion, TextAnswer, Choice, MultiAnswer, PlusOne
+
+
+class EventForm(forms.ModelForm):
+    event_name = forms.CharField() #text
+    event_time = forms.DateField(widget=forms.SelectDateWidget())
+    event_owner = forms.ModelMultipleChoiceField(queryset=User.objects.all(),widget=forms.CheckboxSelectMultiple(),required=False)
+    event_vendor = forms.ModelMultipleChoiceField(queryset=User.objects.all(),widget=forms.CheckboxSelectMultiple(),required=False)
+    event_guest = forms.ModelMultipleChoiceField(queryset=User.objects.all(),widget=forms.CheckboxSelectMultiple(),required=False)
+    support_plus_one = forms.BooleanField()
+    permit_plus_number = forms.IntegerField(initial=1)
+    location = forms.CharField()
+
+    class Meta:
+        model = Event
+        fields = ['event_name', 'event_time', 'event_owner', 'event_vendor', 'event_guest', 'support_plus_one', 'permit_plus_number', 'location']
+
+class AddForm(forms.ModelForm):
+    event_vendor = forms.ModelMultipleChoiceField(queryset=User.objects.all(),widget=forms.CheckboxSelectMultiple(),required=False)
+    event_guest = forms.ModelMultipleChoiceField(queryset=User.objects.all(),widget=forms.CheckboxSelectMultiple(),required=False)
+
+    class Meta:
+        model = Event
+        fields = ['event_vendor', 'event_guest']
+
+class TextForm(forms.ModelForm):
+    question = forms.Textarea()
+
+    class Meta:
+        model = TextQuestion
+        fields = ['question']
+
+class MultipleForm(forms.ModelForm):
+    question = forms.Textarea()
+    permit_choice_number = forms.IntegerField(initial= 0 )
+
+    class Meta:
+        model = TextQuestion
+        fields = ['question', 'permit_choice_number']
+
+class TextAnswerForm(forms.ModelForm):
+    answer = forms.Textarea()
+
+    class Meta:
+        model = TextAnswer
+        fields = ['answer']
+
+
+class ChoiceForm(forms.ModelForm):
+    choice_description = forms.CharField(max_length=200)
+
+    class Meta:
+        model = Choice
+        fields = ['choice_description']
+
+# class MyModelChoiceField(ModelMultipleChoiceField):
+#     def label_from_instance(self, obj):
+#         return "" % obj.id
+
+class MultiAnswerForm(forms.ModelForm):
+    selected_choice = forms.ModelMultipleChoiceField(queryset=None, widget=forms.CheckboxSelectMultiple(), required=False)
+    def __init__(self, question, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['selected_choice'].queryset = Choice.objects.filter(question=question)
+        # if question.multi_choice is True:
+        #     self.fields['selected_choice'].widget = forms.CheckboxSelectMultiple()
+        # else:
+        #     self.fields['selected_choice'].widget = forms.SelectMultiple()
+    class Meta:
+        model = MultiAnswer
+        fields = ['selected_choice']
+
+
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+
+class PlusOneForm(forms.ModelForm):
+    you_want_plus = forms.IntegerField(initial=0, min_value=0)
+
+    class Meta:
+        model = PlusOne
+        fields = ['you_want_plus']

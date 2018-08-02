@@ -1,0 +1,455 @@
+from django.contrib.auth import authenticate, login
+from django.contrib.auth import logout
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Q
+from .forms import EventForm, UserForm, TextForm, MultipleForm, TextAnswerForm, ChoiceForm, MultiAnswerForm, AddForm, PlusOneForm
+from .models import Event, TextQuestion, TextAnswer, Choice, MultiAnswer, PlusOne
+from django.urls import reverse
+from django.contrib.auth.models import User
+from django.core.mail import send_mail 
+from django.conf import settings
+
+def index(request):
+    if not request.user.is_authenticated:
+        return render(request, 'event/login.html')
+    else:
+        invitation = Event.objects.filter(event_invitation__in=[request.user])
+        events = Event.objects.filter(event_owner__in=[request.user])
+        vendor = Event.objects.filter(event_vendor__in=[request.user])
+        guest = Event.objects.filter(event_guest__in=[request.user])
+        return render(request, 'event/index.html', {'invitation':invitation, 'events': events, 'vendor':vendor, 'guest':guest })
+
+def logout_user(request):
+    logout(request)
+    return redirect(reverse('event:index'))#change
+
+def login_user(request):
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                return redirect(reverse('event:index'))#change
+            else:
+                return render(request, 'event/login.html', {'error_message': 'Your account has been disabled'})
+        else:
+            return render(request, 'event/login.html', {'error_message': 'Invalid login'})
+    return redirect(reverse('event:index'))#add redirection
+#写法不一样？
+
+def register(request):
+    if request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    form = UserForm(request.POST or None)
+    if form.is_valid():
+        user = form.save(commit=False)
+        username = form.cleaned_data['username']
+        password = form.cleaned_data['password']
+        user.set_password(password)
+        user.save()
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                return redirect(reverse('event:index'))
+    context = {
+        "form": form,
+    }
+    return render(request, 'event/register.html', context)
+def add_user(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    event = get_object_or_404(Event, pk = event_id)
+    form = AddForm(request.POST or None, request.FILES or None)
+    if form.is_valid():
+        for guest in form.cleaned_data['event_guest']:
+            event.event_invitation.add(guest)
+        for vendor in form.cleaned_data['event_vendor']:
+            event.event_vendor.add(vendor)
+        return redirect(reverse('event:detail', kwargs={'event_id': event.id}))
+    context = {
+        "form": form,
+    }
+    return render(request, 'event/add_user.html', context)
+
+def question_edit(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    question = get_object_or_404(TextQuestion, pk = question_id)
+    event = get_object_or_404(Event, pk = event_id)
+    events = Event.objects.filter(event_owner__in=[request.user])
+    if event in events:
+        form = TextForm(request.POST or None, request.FILES or None)
+        if form.is_valid():
+            content = 'The Question: ' + str(question.question) + ' from Event: ' + str(event.event_name) + ' has been changed by ' + str(request.user)  + '. please go to our site to change your answer.'
+            send_mail(
+                'From supeRSVP: A question has been changed!',
+                content ,
+                'zhengyi.jiang1995@gmail.com',
+                [i.email for i in event.event_guest.all()],
+                fail_silently=True,
+            )  
+            question.question = form.cleaned_data['question']
+            question.save()
+   
+            return redirect(reverse('event:detail',kwargs={'event_id': event.id}))
+        context = {
+            "form": form, "usage" : 1, "event": event, "question" : question
+        }
+        return render(request, 'event/add_text.html', context)
+    else:
+        return redirect(reverse('event:index'))
+
+def multiple_edit(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    question = get_object_or_404(TextQuestion, pk = question_id)
+    event = get_object_or_404(Event, pk = event_id)
+    events = Event.objects.filter(event_owner__in=[request.user])
+    if event in events:
+        form = TextForm(request.POST or None, request.FILES or None)
+        if form.is_valid():
+            content = 'The Question: ' + str(question.question) + ' from Event: ' + str(event.event_name) + ' has been changed by ' + str(request.user)  + '. please go to our site to change your answer.'
+            send_mail(
+                'From supeRSVP: A question has been changed!',
+                content ,
+                'zhengyi.jiang1995@gmail.com',
+                [i.email for i in event.event_guest.all()],
+            fail_silently=True,
+            ) 
+            question.question = form.cleaned_data['question']
+            question.save()
+            #question.delete()
+            #question = form.save(commit=False)
+            #question.event = event
+            #question.has_submitted = True
+            #question.is_text = False
+            #question.save()
+            return redirect(reverse('event:detail',kwargs={'event_id': event.id}))
+        context = {
+            "form": form, "usage" : 1, "event": event, "question" : question
+        }
+        return render(request, 'event/add_multiple.html', context)
+    else:
+        return redirect(reverse('event:index',kwargs={'event_id': event.id}))
+
+
+
+
+
+def question_delete(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    question = get_object_or_404(TextQuestion, pk = question_id)
+    event = get_object_or_404(Event, pk = event_id)
+    events = Event.objects.filter(event_owner__in=[request.user])
+    if event in events:
+        question.delete()  
+        return redirect(reverse('event:detail',kwargs={'event_id': event.id}))
+    else:
+        return redirect(reverse('event:detail',kwargs={'event_id': event.id}))
+def detail(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        user = request.user
+        event = get_object_or_404(Event, pk=event_id)
+        owner = User.objects.filter(owner__in=[event])
+        invitation = User.objects.filter(invitation__in=[event])
+        vendor = User.objects.filter(vendor__in=[event])
+        guest = User.objects.filter(guest__in=[event])
+        questions = TextQuestion.objects.filter(event=event)
+        ownerevents = Event.objects.filter(event_owner__in=[request.user])
+        guestevents = Event.objects.filter(event_guest__in=[request.user])
+        vendorevents = Event.objects.filter(event_vendor__in=[request.user])
+        plusoneset = PlusOne.objects.filter(userchooseplusone=request.user, event=event)
+        allplusone = PlusOne.objects.filter(event = event)
+        total = 0
+        for plusone in allplusone:
+            total+=plusone.you_want_plus
+        return render(request, 'event/detail.html', {'owner':owner, 'vendor':vendor,
+            'invitation':invitation, 'guest':guest,
+            'event': event, 'user': user, 'ownerevents':ownerevents, 
+            'guestevents':guestevents, 'questions':questions, 'plusoneset':plusoneset, 'allplusone':allplusone, 'vendorevents':vendorevents, 'total':total})
+          #new feature!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!-->
+def create_event(request):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        form = EventForm(request.POST or None, request.FILES or None)
+        if form.is_valid():
+
+            event = form.save(commit=False)
+            event.user = request.user
+            event.save()
+            event.event_owner.add(request.user)
+            for user in form.cleaned_data['event_owner']:
+                event.event_owner.add(user)
+            for guest in form.cleaned_data['event_guest']:
+                event.event_invitation.add(guest)
+            for vendor in form.cleaned_data['event_vendor']:
+                event.event_vendor.add(vendor)
+            return redirect(reverse('event:detail', kwargs={'event_id': event.id}))
+        context = {
+            "form": form,
+        }
+        return render(request, 'event/create_event.html', context)
+def add_text(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        form = TextForm(request.POST or None, request.FILES or None)
+        event = get_object_or_404(Event, pk=event_id)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.event = event
+            question.save()
+            return redirect(reverse('event:detail', kwargs={'event_id': event.id}))
+        context = {
+            "form": form, "event": event
+        }
+        return render(request, 'event/add_text.html', context)
+
+def add_multiple(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        form = MultipleForm(request.POST or None, request.FILES or None)
+        event = get_object_or_404(Event, pk=event_id)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.event = event
+            question.has_submitted = True
+            question.is_text = False
+            question.save()
+            return redirect(reverse('event:add_choice', kwargs={'event_id': event.id, 'question_id':question.id}))
+        context = {
+            "form": form, "event": event
+        }
+        return render(request, 'event/add_multiple.html', context)
+
+def add_choice(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        form = ChoiceForm(request.POST or None, request.FILES or None)
+        event = get_object_or_404(Event, pk=event_id)
+        question = get_object_or_404(TextQuestion, pk=question_id)
+        choices = Choice.objects.filter(question=question)
+        if form.is_valid():
+            choice = form.save(commit=False)
+            choice.question = question
+            choice.save()
+            return redirect(reverse('event:add_choice', kwargs={'event_id': event.id, 'question_id': question.id}))
+        context = {
+            "form": form,
+            "question": question,
+            "choices":choices,
+            "event": event
+        }
+        return render(request, 'event/add_choice.html', context)
+
+def answer_question(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        form = TextAnswerForm(request.POST or None, request.FILES or None)
+        question = get_object_or_404(TextQuestion, pk = question_id)
+        event = question.event
+        answer = TextAnswer.objects.filter(answeruser = request.user).filter(question = question)
+        if answer is not None:#原来已经回答过 就delete
+            answer.delete()
+        if form.is_valid():
+            answer = form.save(commit=False)
+            answer.question = question
+            answer.answeruser = request.user
+            answer.save()
+            return redirect(reverse('event:detail', kwargs={'event_id': event.id}))
+        context = {
+            "form": form,
+            'question': question,
+            "event": event
+        }
+        return render(request, 'event/answer_question.html', context)
+
+def answer_multiple(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        question = get_object_or_404(TextQuestion, pk = question_id)
+        event = question.event
+        form = MultiAnswerForm(question, request.POST or None)
+        multi_answer_set = MultiAnswer.objects.filter(question=question).filter(answer_muti_user=request.user)
+        if (multi_answer_set is not None) and (question.guest_canmodify is True):#问题已经回答过， 删除原来的答案，更新
+            for multi_answer in multi_answer_set:
+                selected_choice = multi_answer.selected_choice
+                for choice in selected_choice.all():
+                    choice.userchoose.remove(request.user)
+            multi_answer_set.delete()
+        if form.is_valid():
+            if (len(form.cleaned_data['selected_choice']) != question.permit_choice_number) and (question.permit_choice_number!=0):
+                return render(request, 'event/answer_multiple.html', {'error_message': 'Invalid Number of Choice', 'question':question, "event": event,'form':form})
+            multi_answer = form.save(commit=False)
+            multi_answer.question = question
+            multi_answer.answer_muti_user = request.user
+            multi_answer.save()
+            for choice in form.cleaned_data['selected_choice']:
+                multi_answer.selected_choice.add(choice)
+                multi_answer.save()
+                choice.userchoose.add(request.user)
+            return redirect(reverse('event:detail', kwargs={'event_id': event.id}))
+        context = {
+            "form": form,
+            'question': question,
+            "event": event
+
+        }
+        return render(request, 'event/answer_multiple.html', context)
+
+def question_detail(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        event = get_object_or_404(Event, pk=event_id)
+        question = get_object_or_404(TextQuestion, pk=question_id)
+        answers = TextAnswer.objects.filter(question=question)
+        useranswer = TextAnswer.objects.filter(answeruser=request.user).filter(question=question)
+        ownerevents = Event.objects.filter(event_owner__in=[request.user])
+        vendorevents = Event.objects.filter(event_vendor__in=[request.user])
+        # vendorquestion = TextQuestion.objects.filter(permit_vendor__in=[request.user])
+        return render(request, 'event/question_detail.html',
+                      {'event': event, 'question': question, 'ownerevents':ownerevents, 'answers': answers,
+                       'useranswer':useranswer, 'vendorevents': vendorevents})
+
+def multi_question_detail(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        event = get_object_or_404(Event, pk=event_id)
+        question = get_object_or_404(TextQuestion, pk=question_id)
+        selected_choice = MultiAnswer.objects.filter(answer_muti_user= request.user, question = question)
+        # selected_choice = selected_choice.all()#这查看该问题detail的guest所选的choice
+        all_choice = Choice.objects.filter(question = question)#该问题的所有choice
+
+
+        useranswer = TextAnswer.objects.filter(answeruser=request.user).filter(question=question)
+        ownerevents = Event.objects.filter(event_owner__in=[request.user])
+        vendorevents = Event.objects.filter(event_vendor__in=[request.user])
+        # vendorquestion = TextQuestion.objects.filter(permit_vendor__in=[request.user])
+        return render(request, 'event/multi_question_detail.html',
+                      {'event': event, 'question': question, 'ownerevents':ownerevents,
+                       'useranswer':useranswer, 'vendorevents': vendorevents, 'selected_choice':selected_choice,
+                       'all_choice':all_choice})
+
+def vendor_cansee(request, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    question = get_object_or_404(TextQuestion, pk=question_id)
+    event = question.event
+    try:
+        if question.vendor_cansee:
+            question.vendor_cansee = False
+        else:
+            question.vendor_cansee = True
+        question.save()
+    except (KeyError, question.DoesNotExist):
+        return JsonResponse({'success': False})
+    else:
+        return redirect(reverse('event:detail', kwargs={'event_id': event.id}))#不安全
+
+def delete(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    event = get_object_or_404(Event, pk = event_id)
+    events = Event.objects.filter(event_owner__in=[request.user])
+    if event in events:
+        event.delete()  
+        return redirect(reverse('event:index'))
+    else:
+        return redirect(reverse('event:index'))
+
+
+def accept(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    event = get_object_or_404(Event, pk = event_id)
+    events = Event.objects.filter(event_invitation__in=[request.user])
+    event.event_invitation.remove(request.user)
+    event.event_guest.add(request.user)
+    return redirect(reverse('event:index'))
+
+def guest_modify(request, event_id, question_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    question = get_object_or_404(TextQuestion, pk=question_id)
+    event = question.event
+    try:
+        if question.guest_canmodify:
+            question.guest_canmodify = False
+        else:
+            question.guest_canmodify = True
+        question.save()
+    except (KeyError, question.DoesNotExist):
+        return JsonResponse({'success': False})
+    else:
+        if question.is_text:
+            return redirect(reverse('event:question_detail', kwargs={'event_id': event.id, 'question_id': question.id}))
+        return redirect(reverse('event:multi_question_detail', kwargs={'event_id': event.id, 'question_id': question.id}))#不安全
+
+def edit_choice(request, event_id, question_id, choice_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    choice = get_object_or_404(Choice, pk = choice_id)
+    question = get_object_or_404(TextQuestion, pk = question_id)
+    event = get_object_or_404(Event, pk = event_id)
+    events = Event.objects.filter(event_owner__in=[request.user])
+    if event in events:
+        form = ChoiceForm(request.POST or None, request.FILES or None)
+        if form.is_valid():
+            content = 'The Choice: ' + str(choice.choice_description) + ' from Event: ' + str(event.event_name) + ' has been changed by ' + str(request.user)  + '. please go to our site to change your answer.'
+            send_mail(
+                'From supeRSVP: A question has been changed!',
+                content ,
+                'zhengyi.jiang1995@gmail.com',
+                [i.email for i in event.event_guest.all()],
+                fail_silently=True,
+            )  
+            choice.choice_description = form.cleaned_data['choice_description']
+            choice.save()
+            return redirect(reverse('event:multi_question_detail',kwargs={'event_id': event.id, 'question_id': question.id}))
+        context = {
+            "form": form, "event": event, "question" : question, "choice" : choice
+        }
+        return render(request, 'event/edit_choice.html', context)
+    else:
+        return redirect(reverse('event:index'))
+
+
+def plus_one(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect(reverse('event:index'))
+    else:
+        event = get_object_or_404(Event, pk=event_id)
+        form = PlusOneForm(request.POST or None, request.FILES or None)
+        plusone = PlusOne.objects.filter(userchooseplusone=request.user, event=event)
+        if plusone is not None:#原来已经回答过 就delete
+            plusone.delete()
+        if form.is_valid():
+            plusone = form.save(commit=False)
+            if plusone.you_want_plus > event.permit_plus_number:
+                plusone.clean()
+                return render(request, 'event/plus_one.html',
+                              {'error_message': 'Exceed Maximus Permit Number', "event": event,
+                               'form': form})
+            plusone.event = event
+            plusone.userchooseplusone = request.user
+            plusone.save()
+            return redirect(reverse('event:detail', kwargs={'event_id': event.id}))
+        context = {
+            "form": form,
+            "event": event
+        }
+        return render(request, 'event/plus_one.html', context)
