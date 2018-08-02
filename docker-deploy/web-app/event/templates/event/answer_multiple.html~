@@ -1,0 +1,47 @@
+{% extends 'event/base.html' %}
+{% block title %}Answer Multiple Question{% endblock %}
+
+{% block body %}
+    <div class="container-fluid">
+                    <div>
+                <a href="{% url 'event:detail' event.id %}" class="btn btn-primary" role="button">Back to {{ event.event_name }}</a>
+            </div>
+            <br>
+        <div class="row">
+            <div class="col-sm-12 col-md-20">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <h3>Answer Multiple Question</h3>
+                        {% if error_message %}
+                            <p><h2 style="color: red">Warning ! ! ! {{ error_message }}</h2></p>
+                        {% endif %}
+                        <h2 style="display: inline;">Choose your answer for question: "</h2>
+                        <h2 style="color:orange;display: inline;">{{ question.question }}</h2>
+                        <h2 style="display: inline">" below.</h2><br>
+                        <h4 style="color:red; display: inline;">You must choose exactly </h4><h4 style="color:red; display: inline;">{{ question.permit_choice_number }}</h4><h4 style="color:red; display: inline;"> choices!</h4><br>
+                        <br/>
+			{% if not question.guest_canmodify %}
+                        <small style="color: red">Attention: Your old response(If you have) has been deleted!</small>
+			{% endif %}
+			<br/>
+                        {% if question.guest_canmodify %}
+                            <form class="form-horizontal" role="form" action="" method="post"
+                                  enctype="multipart/form-data">
+
+                                <div class="container-fluid">
+                                    {{ form.as_p }}
+                                </div>
+                                <div class="container-fluid">
+                                    <button type="submit" class="btn btn-success">Submit</button>
+                                    {% csrf_token %}
+                                </div>
+                            </form>
+                        {% else %}
+                            <h3 style="color:red">This question cannot be modified anymore.</h3>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

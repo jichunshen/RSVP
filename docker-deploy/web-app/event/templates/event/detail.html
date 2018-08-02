@@ -1,0 +1,155 @@
+{% extends 'event/base.html' %}
+{% block title %}{{ event }}{% endblock %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-4 col-md-3">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <h1>{{ event.event_name }}</h1>
+                        <h2><small>{{ event.event_time }}</small></h2>
+                        <h2><small>{{ event.location }}</small></h2>
+                        {% if event in ownerevents %}
+                            <!--new feature!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!-->     
+                        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                        <h3>Owner:</h3>
+                        {% for owner in owner %}
+                            <h2><small>{{ owner }}</small></h2>
+                        {% endfor %} 
+                        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                        <h3>Vendor:</h3>
+                        {% for Vendor in vendor %}
+                            <h2><small>{{ Vendor }}</small></h2>
+                        {% endfor %}
+                        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                        <h3>Who accepted:</h3>
+                        {% for Guest in guest %}
+                            <h2><small>{{ Guest }}</small></h2>
+                        {% endfor %}
+                        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                        <h3>Who haven't accept:</h3>
+                        {% for Guest in invitation %}
+                            <h2><small>{{ Guest }}</small></h2>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-8 col-md-9">
+                {% if event in ownerevents %}
+                <div align="right">
+                            <a href="{% url 'event:add_text' event.id %}"  class="btn btn-primary" role="button">Add Free Text Question</a>
+                            <a href="{% url 'event:add_multiple' event.id %}" class="btn btn-primary" role="button">Add Multiple Choice Question</a>
+                            <br><br>
+                </div>
+                {% endif %}
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        {% if event.support_plus_one is True %}
+                            <h3 style="color: orange">This event support plus guests</h3>
+                    </div> 
+                    <div class="panel-body">
+                            {% if event in ownerevents %}
+                                {% for plusone in allplusone %}
+                                    <h4>{{ plusone.userchooseplusone }} need to plus <a style="color: orangered">{{ plusone.you_want_plus }}</a></h4>
+                                {% endfor %}
+
+                                <h3>Total number of plus is: <a style="color: orangered">{{ total }}</a></h3>
+                            {% endif %}
+                            {% if event in vendorevents %}
+                                <h3>Total number of additional guest is: <a style="color: orangered">{{ total }}</a></h3>
+                            {% endif %}
+                            {% if event in guestevents %}
+                                {% for plusone in plusoneset %}
+                                    <h4 style="display: inline">You choose to plus </h4><h4 style="display: inline;color: orangered">{{ plusone.you_want_plus }}</h4><h4 style="display: inline"> before.</h4><br>
+                                {% endfor %}
+                                <a href="{% url 'event:plus_one' event.id %}" class="btn btn-primary btn-primary" role="button">Choose or Edit</a>
+                            {% endif %}
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <h3>All Text Questions</h3>
+                        {% if error_message %}
+                            <p><strong>{{ error_message }}</strong></p>
+                        {% endif %}
+                        <table class="table table-striped">
+                            <tbody>
+                        {% for question in questions %}
+                            {% if question.is_text is True %}
+                                <div class="col-sm-12 col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                        <a href="{% url 'event:question_detail' event.id question.id %}">
+                                            <h2>{{ question.question }}</h2>
+                                        </a>
+                                        </div>
+                                        <div  class="panel-body">
+                                            {% if event in ownerevents %}
+                                                {% if question.vendor_cansee %}
+                                                    <a href="{% url 'event:vendor_cansee' question.id %}" class="btn btn-primary btn-primary" role="button"><small>Vendor can see the question. Mark as vender can't see</small></a>
+                                                {% endif %}
+                                                {% if not question.vendor_cansee %}
+                                                    <a href="{% url 'event:vendor_cansee' question.id %}" class="btn btn-primary btn-warning" role="button"><small>Vendor can't see the question. Mark as vender can see</small></a>
+                                                {% endif %}
+                                                 <a href="{% url 'event:question_edit' event.id question.id %}" class="btn btn-primary btn-success" role="button"><small>Edit</small></a>
+                                                  <a href="{% url 'event:question_delete' event.id question.id  %}" class="btn btn-primary btn-danger" role="button"><small>Delete</small></a>
+                                            {% endif %}
+                                            {% if event in guestevents %}
+                                                <a href="{% url 'event:answer_question' event.id question.id%}" class="btn btn-primary btn-primary" role="button">Answer/Edit answer</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <h3>All Mulitiple Choice Questions</h3>
+                        {% if error_message %}
+                            <p><strong>{{ error_message }}</strong></p>
+                        {% endif %}
+                        <table class="table table-striped">
+                            <tbody>
+                                                    {% for question in questions %}
+                            {% if question.is_text is False %}
+                                <div class="col-sm-12 col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                        <a href="{% url 'event:multi_question_detail' event.id question.id %}">
+                                            <h2>{{ question.question }}</h2>
+                                        </a>
+                                        </div>
+                                        <div class="panel-body">
+                                            {% if event in ownerevents %}
+                                                {% if question.vendor_cansee %}
+                                                    <a href="{% url 'event:vendor_cansee' question.id %}" class="btn btn-primary btn-primary" role="button"><small>Vendor can see the question. Mark as vender can't see</small></a>
+                                                {% endif %}
+                                                {% if not question.vendor_cansee %}
+                                                    <a href="{% url 'event:vendor_cansee' question.id %}" class="btn btn-primary btn-warning" role="button"><small>Vendor can't see the question. Mark as vender can see</small></a>
+                                                {% endif %}
+                                                 <a href="{% url 'event:multiple_edit' event.id question.id %}" class="btn btn-primary btn-success" role="button"><small>Edit</small></a>
+                                                          <a href="{% url 'event:add_choice' event.id question.id %}" class="btn btn-primary btn-success" role="button"><small>Add choice</small></a>
+                                                  <a href="{% url 'event:question_delete' event.id question.id  %}" class="btn btn-primary btn-danger" role="button"><small>Delete</small></a>
+                                            {% endif %}
+                                            {% if event in guestevents %}
+                                                <a href="{% url 'event:answer_multiple' event.id question.id %}" class="btn btn-primary btn-primary" role="button">Answer/Edit answer</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

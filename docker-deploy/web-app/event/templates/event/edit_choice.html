@@ -1,0 +1,33 @@
+{% extends 'event/base.html' %}
+{% block title %}Add a New Choice{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+                        <div>
+                <a href="{% url 'event:multi_question_detail' event.id question.id %}" class="btn btn-primary" role="button">Back to {{ question.question }}</a>
+            </div>
+            <br>
+    <div class="panel panel-defult">
+        <div class="panel heading">
+            <div class="container-fluid">
+                <h3>Edit choice "{{ choice.choice_description }}" from "{{ question.question }}"</h3>
+            </div>
+        </div>
+        <div class="panel-body">
+            {% if error_message %}
+            <p><strong>{{ error_message }}</strong></p>
+            {% endif %}
+            <h4 style="color: lightseagreen;">Fill the choice discription below to edit choice</h4>
+            <form class="form-horizontal" role="form" action="" method="post" enctype="multipart/form-data"> 
+                {% csrf_token %}
+                {% include 'event/form_template.html' %}     
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button type="submit" class="btn btn-primary btn-sm">Change this choice</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

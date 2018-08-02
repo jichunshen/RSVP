@@ -1,0 +1,43 @@
+{% extends 'event/base.html' %}
+{% block title %}Add a New Multiple Question{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+                <div>
+                <a href="{% url 'event:detail' event.id %}" class="btn btn-primary" role="button">Back to {{ event.event_name }}</a>
+            </div>
+            <br>
+    <div class="panel panel-defult">
+        <div class="panel heading">
+            {% if usage is 1 %}
+            <div class="container-fluid">
+                <h3>Edit Mulitiple Choice Question "{{ question.question }}" for event "{{ event.event_name }}"</h3>
+            </div>
+            {% else %}
+            <div class="container-fluid">
+                <h3>Add a new Mulitiple Choice Question for event "{{ event.event_name }}"</h3>
+            </div>
+            {% endif %}
+        </div>
+        <div class="panel-body">
+            {% if error_message %}
+            <p><strong>{{ error_message }}</strong></p>
+            {% endif %}
+            <form class="form-horizontal" role="form" action="" method="post" enctype="multipart/form-data"> 
+                {% csrf_token %}
+                {% include 'event/form_template.html' %}
+                <div class="col-sm-offset-2 col-sm-10">
+                    <small style="color:orangered">Set the permit choice number. Set as 0 if there is no restriction.</small>
+                </div>
+                <br>
+                <br>
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button type="submit" class="btn btn-success">Save Multiple Questions</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

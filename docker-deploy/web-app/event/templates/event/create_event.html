@@ -1,0 +1,30 @@
+{% extends 'event/base.html' %}
+{% block title %}Add a New Event{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="panel panel-defult">
+        <div class="panel heading">
+            <div class="container-fluid">
+            <h3>Add a New Event</h3>
+        </div>
+        </div>
+            <div class="panel-body">
+            {% if error_message %}
+            <p><strong>{{ error_message }}</strong></p>
+            {% endif %}
+            <form class="form-horizontal" role="form" action="" method="post" enctype="multipart/form-data">
+               
+                <div class="container-fluid">
+                    {{ form.as_p }}
+                </div>
+                        <!--{% include 'event/form_template.html' %}-->
+                <div class="container-fluid">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                     {% csrf_token %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'event/base.html' %}
+{% block title %}Add a New Choice{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+                    <div>
+                <a href="{% url 'event:detail' event.id %}" class="btn btn-primary" role="button">Save the current choices and Back to {{ event.event_name }}</a>
+            </div>
+            <br>
+    <div class="panel panel-defult">
+        <div class="panel heading">
+            <div class="container-fluid">
+                <h3>Add a New Choice</h3>
+            </div>
+        </div>
+        <div class="panel-body">
+            {% if error_message %}
+            <p><strong>{{ error_message }}</strong></p>
+            {% endif %}
+            <h3 style="display: inline;">Question: </h3><h3 style="display: inline;">{{ question.question }}</h3>
+            <h3 style="color: orange;">Choices you already create:</h3>
+            {% for choice in choices %}
+                <h3>{{ choice.choice_description }}</h3>
+            {% endfor %}
+            <br>
+            <h4 style="color: lightseagreen;">Fill the choice discription below to create one more choice</h4>
+{#            <a href="{% url 'event:guest_modify' event.id question.id %}" class="btn btn-warning btn-sm" role="button">Mark as can't modify</a>#}
+            <form class="form-horizontal" role="form" action="" method="post" enctype="multipart/form-data"> 
+                {% csrf_token %}
+                {% include 'event/form_template.html' %}     
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button type="submit" class="btn btn-primary btn-sm">Add this choice</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

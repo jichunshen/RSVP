@@ -1,0 +1,35 @@
+{% extends 'event/base.html' %}
+{% block title %}Plus One{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+            <div>
+                <a href="{% url 'event:detail' event.id %}" class="btn btn-primary" role="button">Back to {{ event.event_name }}</a>
+            </div>
+            <br>
+
+    <div class="panel panel-defult">
+        <div class="panel heading">
+            <div class="container-fluid">
+                <h3 style="display: inline">Maximum Plus Number is: </h3><h3 style="display: inline">{{ event.permit_plus_number }}</h3>
+                <h3>Choose the number of guest you want plus for event "{{ event.event_name }}"</h3>
+            </div>
+        </div>
+        <div class="panel-body">
+            {% if error_message %}
+                <p><h2 style="color: red">PLEASE! {{ error_message }}</h2></p>
+            {% endif %}
+            <form class="form-horizontal" role="form" action="" method="post" enctype="multipart/form-data"> 
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="col-sm-offset-2 col-sm-10">
+                    <br>
+                    <br>
+                    <button type="submit" class="btn btn-success">Save Your Plus</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

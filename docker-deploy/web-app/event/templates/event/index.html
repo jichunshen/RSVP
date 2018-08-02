@@ -1,0 +1,111 @@
+{% extends 'event/base.html' %}
+
+{% block body %}
+<div class="container container-fluid">
+    <div class="row">
+        <div class="container">
+            <h1>{{ user.username }}'s Events</h1>
+        </div>
+        <div class="container">
+            <br>
+            <a href="{% url 'event:create_event' %}">
+                <button type="button" class="btn btn-success">
+                    <span class="glyphicon glyphicon-plus"></span>&nbsp; Add an Event
+                </button>
+            </a>
+        </div> 
+        <div class = "container">
+        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+            <h1>Invitation</h1>
+        </div>
+        {% if invitation %}
+            {% for event in invitation %}
+                <div class="container container-fluid">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h2>{{ event.event_name }}</h2>
+                        </div>
+                        <div class="panel-body">
+                            <h4>{{ event.event_time }}</h4>
+                            <h4>{{ event.location }}</h4>
+                            <!-- View Details -->
+                            <a href="{% url 'event:detail' event.id %}" class="btn btn-primary btn-sm" role="button">View Details</a>
+                            <a href="{% url 'event:accept' event.id %}" class="btn btn-success btn-sm" role="button">Accept</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+
+      
+        <div class = "container">
+        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+            <h1>Owner Events</h1>
+        </div>
+        {% if events %}
+            {% for event in events %}
+                <div class="container container-fluid">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h2>{{ event.event_name }}</h2>
+                        </div>
+                        <div class="panel-body">
+                            <h4>{{ event.event_time }}</h4>
+                            <h4>{{ event.location }}</h4>
+                            <!-- View Details -->
+                            <a href="{% url 'event:detail' event.id %}" class="btn btn-primary btn-sm" role="button">View Details</a>
+                            <a href="{% url 'event:add' event.id %}" class="btn btn-success btn-sm" role="button">Add user</a>
+                            <!--new feature!!!!!!!!!!!!!!!!!!!!!-->
+                            <a href="{% url 'event:delete' event.id %}" class="btn btn-danger btn-sm" role="button">Delete</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="container">
+        <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+            <h1>Vendor Events</h1>
+        </div>
+        {% if vendor %}
+            {% for event in vendor %}
+                <div class="container container-fluid">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h2>{{ event.event_name }}</h2>
+                        </div>
+                        <div class="panel-body">
+                            <h4>{{ event.event_time }}</h4>
+                            <h4>{{ event.location }}</h4>
+                            <!-- View Details -->
+                            <a href="{% url 'event:detail' event.id %}" class="btn btn-primary btn-sm" role="button">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="container">
+        <hr style=" height:2px;border:none;border-top:1px solid grey" />
+            <h1>Guest Events</h1>
+        </div>
+        {% if guest %}
+            {% for event in guest %}
+                <div class="container container-fluid">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h2>{{ event.event_name }}</h2>
+                        </div>
+                        <div class="panel-body">
+                            <h4>{{ event.event_time }}</h4>
+                            <h4>{{ event.location }}</h4>
+                            <!-- View Details -->
+                            <a href="{% url 'event:detail' event.id %}" class="btn btn-primary btn-sm" role="button">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}  
+    </div>
+</div>
+</div>
+{% endblock %}

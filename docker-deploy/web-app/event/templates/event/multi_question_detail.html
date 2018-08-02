@@ -1,0 +1,91 @@
+{% extends 'event/base.html' %}
+{% block title %}{{ event }}{% endblock %}
+{% block events_active %}active{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col-sm-4 col-md-3">
+                    <div>
+                        <a href="{% url 'event:detail' event.id %}" class="btn btn-primary" role="button">Back to {{ event.event_name }}</a>
+                    </div>
+                    <br>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h1>{{ event.event_name }}</h1>
+                    <h2>Question: {{ question.question }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-8 col-md-9">
+            <div class="panel panel-default">
+                <div class="panel-body">
+
+                    {% if error_message %}
+                        <p><strong>{{ error_message }}</strong></p>
+                    {% endif %}
+
+                    <table class="table table-striped">
+                        <tbody>
+                        {% if event in ownerevents %}
+                            <h3>Your are owner of this event.</h3>
+                             <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                            <h1>All Answers</h1>
+                            {#  如果此event在user的ownerevent里就可以看answer#}
+                            {% for choice in all_choice %}
+                                <h3 style="display: inline; color: orange"><a href="{% url 'event:edit_choice' event.id question.id choice.id %}">{{ choice.choice_description }}</a></h3>
+                                <br>
+                                <small>Selected by user: </small>
+                                {% for user in choice.userchoose.all %}
+                                    <small>{{ user.username }}</small>&nbsp;
+                                {% endfor %}
+                                <br>
+                            {% endfor %}
+                        {% elif event in vendorevents %}
+                            <h3>Your are vendor of this event.</h3>
+                            {% if question.vendor_cansee %}   
+                            <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                            <h1>All Answers</h1>
+                                {% for choice in all_choice %}
+                                    <h3 style="display: inline; color: orange">{{ choice.choice_description }}</h3>
+                                    <br>
+                                    <small>Selected by user: </small>
+                                    {% for user in choice.userchoose.all %}
+                                        <small>{{ user.username }}</small>&nbsp;
+                                    {% endfor %}
+                                    <br>
+                                {% endfor %}
+                                <br>
+                                {% if question.guest_canmodify %}
+                                    <a href="{% url 'event:guest_modify' event.id question.id %}" class="btn btn-warning role="button">Guest can modify this question. Mark as can't modify</a>
+                                {% else %}
+                                    <a href="{% url 'event:guest_modify' event.id question.id %}" class="btn btn-warning" role="button">Guest can't modify this question. Mark as can modify</a>
+                                {% endif %}
+                            {% else%}
+                                <h3>You can not see answers for this question so far. Ask owner for permission.</h3>
+                            {% endif %}
+                        {% else %}
+                            <h3>Your are guest of this event.</h3>
+
+                            <hr style=" height:2px;border:none;border-top:1px solid grey;" />
+                            <h1>Your selection to this question is:</h1><br>
+                                {% for choiceset in selected_choice %}
+                                    {% for choice in choiceset.selected_choice.all %}
+                                        <h3 style="color:orange;">{{ choice.choice_description }}</h3>
+                                    {% endfor %}
+                                {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

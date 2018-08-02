@@ -1,0 +1,43 @@
+{% extends 'event/base.html' %}
+{% block title %}Answer Text Question{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div>
+        <a href="{% url 'event:detail' event.id %}" class="btn btn-primary" role="button">Back to {{ event.event_name }}</a>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-sm-12 col-md-20">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h3>Answer Text Question</h3>
+                    {% if error_message %}
+                        <p><strong>{{ error_message }}</strong></p>
+                    {% endif %}
+                    <h2 style="display: inline;">Fill your answer for question: "</h2><h2 style="color:orange;display: inline;">{{ question.question }}</h2><h2 style ="display: inline">" below.</h2>
+                    <br/>
+		    {% if question.guest_canmodify %}
+                    <small style="color: red">Attention: Your old response(If you have) has been delete!</small>
+		    {% endif %}
+		    <br/>
+                    {% if question.guest_canmodify %}
+                        <form class="form-horizontal" role="form" action="" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+{#                            {{ form.as_p }}#}
+                            {% include 'event/form_template.html' %}
+                            <div class="form-group">
+                                <div class="col-sm-offset-2 col-sm-10">
+                                    <button type="submit" class="btn btn-success">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <h3 style="color:red">This question cannot be modified anymore.</h3>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
